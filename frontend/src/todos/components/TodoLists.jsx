@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import {
   Alert,
   Button,
@@ -14,15 +14,7 @@ import {
 } from '@mui/material'
 import ReceiptIcon from '@mui/icons-material/Receipt'
 import { TodoListForm } from './TodoListForm'
-import {
-  createTodo,
-  createTodoList,
-  deleteTodo,
-  getTodoList,
-  getTodoLists,
-  updateTodo,
-  updateTodoList,
-} from '../api'
+import { createTodoList, getTodoList, getTodoLists, updateTodoList } from '../api'
 
 export const TodoLists = ({ style }) => {
   const [todoLists, setTodoLists] = useState({})
@@ -84,54 +76,13 @@ export const TodoLists = ({ style }) => {
     }
   }
 
-  const saveTodoList = async (listId, { title, todos }) => {
-    const originalList = todoLists[listId]
-    if (!originalList) throw new Error('Todo list is no longer available.')
-
-    try {
-      if (title !== originalList.title) {
-        await updateTodoList(listId, { title })
-      }
-
-      const removedIndexes = originalList.todos
-        .map((todo, index) => index)
-        .filter((index) => !todos.some((todo) => todo.originalIndex === index))
-
-      for (const index of [...removedIndexes].sort((a, b) => b - a)) {
-        await deleteTodo(listId, index)
-      }
-
-      for (const todo of todos) {
-        if (todo.originalIndex === null) continue
-
-        const originalText = originalList.todos[todo.originalIndex]
-        if (todo.text === originalText) continue
-
-        const currentIndex =
-          todo.originalIndex - removedIndexes.filter((index) => index < todo.originalIndex).length
-        await updateTodo(listId, currentIndex, todo.text)
-      }
-
-      for (const todo of todos) {
-        if (todo.originalIndex === null) {
-          await createTodo(listId, todo.text)
-        }
-      }
-
-      const updatedList = await getTodoList(listId)
-      setTodoLists((lists) => ({ ...lists, [listId]: updatedList }))
-      return updatedList
-    } catch (requestError) {
-      try {
-        const updatedList = await getTodoList(listId)
-        setTodoLists((lists) => ({ ...lists, [listId]: updatedList }))
-      } catch (refreshError) {
-        throw new Error(
-          `${requestError.message} The list could not be refreshed: ${refreshError.message}`,
-        )
-      }
-      throw requestError
-    }
+  const saveTodoListTitle = async (listId, title) => {
+    const updatedList = await updateTodoList(listId, { title })
+    setTodoLists((lists) => ({
+      ...lists,
+      [listId]: { ...lists[listId], title: updatedList.title },
+    }))
+    return updatedList
   }
 
   return (
@@ -180,7 +131,7 @@ export const TodoLists = ({ style }) => {
         <TodoListForm
           key={activeList} // use key to make React recreate component to reset internal state
           todoList={todoLists[activeList]}
-          saveTodoList={saveTodoList}
+          saveTodoListTitle={saveTodoListTitle}
         />
       )}
     </Fragment>
