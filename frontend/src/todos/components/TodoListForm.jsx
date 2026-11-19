@@ -1,14 +1,64 @@
-import React, { useState } from 'react'
-import { TextField, Card, CardContent, CardActions, Button, Typography } from '@mui/material'
+import React, { useEffect, useRef, useState } from 'react'
+import { Alert, TextField, Card, CardContent, CardActions, Button, Typography } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 
-export const TodoListForm = ({ todoList, saveTodoList }) => {
-  const [todos, setTodos] = useState(todoList.todos)
+const createTodoDrafts = (todos) =>
+  todos.map((text, originalIndex) => ({
+    key: `existing-${originalIndex}`,
+    originalIndex,
+    text,
+  }))
 
-  const handleSubmit = (event) => {
+export const TodoListForm = ({ todoList, saveTodoList }) => {
+  const [title, setTitle] = useState(todoList.title)
+  const [todos, setTodos] = useState(() => createTodoDrafts(todoList.todos))
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState('')
+  const nextTodoKey = useRef(todoList.todos.length)
+
+  useEffect(() => {
+    setTitle(todoList.title)
+    setTodos(createTodoDrafts(todoList.todos))
+    nextTodoKey.current = todoList.todos.length
+  }, [todoList])
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    saveTodoList(todoList.id, { todos })
+    if (todos.some((todo) => todo.originalIndex === null && !todo.text.trim())) {
+      setError('New todos must not be empty.')
+      return
+    }
+
+    setError('')
+    setIsSaving(true)
+    try {
+      const updatedList = await saveTodoList(todoList.id, {
+        title: title.trim(),
+        todos,
+      })
+      setTitle(updatedList.title)
+      setTodos(createTodoDrafts(updatedList.todos))
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const addTodo = () => {
+    setTodos([
+      ...todos,
+      {
+        key: `new-${nextTodoKey.current++}`,
+        originalIndex: null,
+        text: '',
+      },
+    ])
+  }
+
+  const deleteTodo = (index) => {
+    setTodos([...todos.slice(0, index), ...todos.slice(index + 1)])
   }
 
   return (
@@ -19,20 +69,27 @@ export const TodoListForm = ({ todoList, saveTodoList }) => {
           onSubmit={handleSubmit}
           style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}
         >
+          <TextField
+            sx={{ marginTop: '1rem' }}
+            label='List title'
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            disabled={isSaving}
+          />
           {todos.map((name, index) => (
-            <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
+            <div key={name.key} style={{ display: 'flex', alignItems: 'center' }}>
               <Typography sx={{ margin: '8px' }} variant='h6'>
                 {index + 1}
               </Typography>
               <TextField
                 sx={{ flexGrow: 1, marginTop: '1rem' }}
                 label='What to do?'
-                value={name}
+                value={name.text}
+                disabled={isSaving}
                 onChange={(event) => {
                   setTodos([
-                    // immutable update
                     ...todos.slice(0, index),
-                    event.target.value,
+                    { ...name, text: event.target.value },
                     ...todos.slice(index + 1),
                   ])
                 }}
@@ -41,12 +98,10 @@ export const TodoListForm = ({ todoList, saveTodoList }) => {
                 sx={{ margin: '8px' }}
                 size='small'
                 color='secondary'
+                aria-label={`Delete todo ${index + 1}`}
+                disabled={isSaving}
                 onClick={() => {
-                  setTodos([
-                    // immutable delete
-                    ...todos.slice(0, index),
-                    ...todos.slice(index + 1),
-                  ])
+                  deleteTodo(index)
                 }}
               >
                 <DeleteIcon />
@@ -57,17 +112,19 @@ export const TodoListForm = ({ todoList, saveTodoList }) => {
             <Button
               type='button'
               color='primary'
+              disabled={isSaving}
               onClick={() => {
-                setTodos([...todos, ''])
+                addTodo()
               }}
             >
               Add Todo <AddIcon />
             </Button>
-            <Button type='submit' variant='contained' color='primary'>
+            <Button type='submit' variant='contained' color='primary' disabled={isSaving}>
               Save
             </Button>
           </CardActions>
         </form>
+        {error && <Alert severity='error'>{error}</Alert>}
       </CardContent>
     </Card>
   )
