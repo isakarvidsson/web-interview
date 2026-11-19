@@ -8,7 +8,7 @@ import {
 
 const router = Router({ mergeParams: true })
 
-const isValidTodoIndex = (index) => Number.isSafeInteger(index) && index >= 0
+const isValidTodoId = (id) => typeof id === 'string' && Boolean(id)
 
 router.post('/', (req, res) => {
   const text = req.body?.text
@@ -16,23 +16,23 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'Todo text must be a non-empty string.' })
   }
 
-  const todoList = addTodo(req.params.listId, text.trim())
-  if (!todoList) {
+  const todo = addTodo(req.params.listId, text.trim())
+  if (!todo) {
     return res.status(404).json({ error: 'Todo list not found.' })
   }
 
-  res.status(201).json(todoList)
+  res.status(201).json(todo)
 })
 
-router.patch('/:todoIndex', (req, res) => {
+router.patch('/:todoId', (req, res) => {
   const todoList = getTodoList(req.params.listId)
   if (!todoList) {
     return res.status(404).json({ error: 'Todo list not found.' })
   }
 
-  const todoIndex = Number(req.params.todoIndex)
-  if (!isValidTodoIndex(todoIndex)) {
-    return res.status(400).json({ error: 'Todo index must be a non-negative integer.' })
+  const todoId = req.params.todoId
+  if (!isValidTodoId(todoId)) {
+    return res.status(400).json({ error: 'Todo ID must not be empty.' })
   }
 
   const { text } = req.body ?? {}
@@ -40,26 +40,26 @@ router.patch('/:todoIndex', (req, res) => {
     return res.status(400).json({ error: 'Todo text must be a string.' })
   }
 
-  const updatedTodoList = updateTodo(req.params.listId, todoIndex, text)
-  if (!updatedTodoList) {
+  const updatedTodo = updateTodo(req.params.listId, todoId, text)
+  if (!updatedTodo) {
     return res.status(404).json({ error: 'Todo not found.' })
   }
 
-  res.json(updatedTodoList)
+  res.json(updatedTodo)
 })
 
-router.delete('/:todoIndex', (req, res) => {
+router.delete('/:todoId', (req, res) => {
   const todoList = getTodoList(req.params.listId)
   if (!todoList) {
     return res.status(404).json({ error: 'Todo list not found.' })
   }
 
-  const todoIndex = Number(req.params.todoIndex)
-  if (!isValidTodoIndex(todoIndex)) {
-    return res.status(400).json({ error: 'Todo index must be a non-negative integer.' })
+  const todoId = req.params.todoId
+  if (!isValidTodoId(todoId)) {
+    return res.status(400).json({ error: 'Todo ID must not be empty.' })
   }
 
-  if (!deleteTodo(req.params.listId, todoIndex)) {
+  if (!deleteTodo(req.params.listId, todoId)) {
     return res.status(404).json({ error: 'Todo not found.' })
   }
 

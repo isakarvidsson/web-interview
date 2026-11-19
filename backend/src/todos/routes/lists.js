@@ -47,14 +47,8 @@ router.patch('/:listId', (req, res) => {
     }
     updates.title = body.title.trim()
   }
-  if (Object.hasOwn(body, 'todos')) {
-    if (!Array.isArray(body.todos) || body.todos.some((todo) => typeof todo !== 'string')) {
-      return res.status(400).json({ error: 'Todos must be an array of strings.' })
-    }
-    updates.todos = body.todos
-  }
   if (!Object.keys(updates).length) {
-    return res.status(400).json({ error: 'Provide a list title or todos to update.' })
+    return res.status(400).json({ error: 'Provide a list title to update.' })
   }
 
   res.json(updateTodoList(req.params.listId, updates))

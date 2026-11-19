@@ -38,13 +38,13 @@ export const createTodo = (listId, text) =>
     body: { text },
   })
 
-export const updateTodo = (listId, todoIndex, text) =>
-  request(`/lists/${encodeURIComponent(listId)}/todos/${todoIndex}`, {
+export const updateTodo = (listId, todoId, text) =>
+  request(`/lists/${encodeURIComponent(listId)}/todos/${encodeURIComponent(todoId)}`, {
     method: 'PATCH',
     body: { text },
   })
 
-export const deleteTodo = (listId, todoIndex) =>
-  request(`/lists/${encodeURIComponent(listId)}/todos/${todoIndex}`, {
+export const deleteTodo = (listId, todoId) =>
+  request(`/lists/${encodeURIComponent(listId)}/todos/${encodeURIComponent(todoId)}`, {
     method: 'DELETE',
   })

@@ -4,12 +4,12 @@ const INITIAL_TODO_LISTS = {
   '0000000001': {
     id: '0000000001',
     title: 'First List',
-    todos: ['First todo of first list!'],
+    todos: [{ id: randomUUID(), text: 'First todo of first list!' }],
   },
   '0000000002': {
     id: '0000000002',
     title: 'Second List',
-    todos: ['First todo of second list!'],
+    todos: [{ id: randomUUID(), text: 'First todo of second list!' }],
   },
 }
 
@@ -38,22 +38,27 @@ export const addTodo = (listId, text) => {
   const todoList = getTodoList(listId)
   if (!todoList) return null
 
-  todoList.todos.push(text)
-  return todoList
+  const todo = { id: randomUUID(), text }
+  todoList.todos.push(todo)
+  return todo
 }
 
-export const updateTodo = (listId, index, text) => {
+export const updateTodo = (listId, todoId, text) => {
   const todoList = getTodoList(listId)
-  if (!todoList || index >= todoList.todos.length) return null
+  const todo = todoList?.todos.find((item) => item.id === todoId)
+  if (!todo) return null
 
-  todoList.todos[index] = text
-  return todoList
+  todo.text = text
+  return todo
 }
 
-export const deleteTodo = (listId, index) => {
+export const deleteTodo = (listId, todoId) => {
   const todoList = getTodoList(listId)
-  if (!todoList || index >= todoList.todos.length) return false
+  if (!todoList) return false
 
-  todoList.todos.splice(index, 1)
+  const todoIndex = todoList.todos.findIndex((todo) => todo.id === todoId)
+  if (todoIndex === -1) return false
+
+  todoList.todos.splice(todoIndex, 1)
   return true
 }
