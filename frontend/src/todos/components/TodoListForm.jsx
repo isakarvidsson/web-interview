@@ -1,14 +1,27 @@
-import React, { useState } from 'react'
-import { TextField, Card, CardContent, CardActions, Button, Typography } from '@mui/material'
-import DeleteIcon from '@mui/icons-material/Delete'
+import React from 'react'
+import { Alert, Button, Card, CardActions, CardContent, TextField, Typography } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import { TodoItemRow } from './TodoItemRow'
+import { useTodoListEditor } from '../useTodoListEditor'
 
-export const TodoListForm = ({ todoList, saveTodoList }) => {
-  const [todos, setTodos] = useState(todoList.todos)
+export const TodoListForm = ({ todoList, saveTodoListTitle }) => {
+  const {
+    title,
+    todos,
+    savingTodoKeys,
+    error,
+    updateTitle,
+    commitTitle,
+    updateTodoText,
+    commitTodoText,
+    handleDeleteTodo,
+    addTodo,
+    flushPendingSaves,
+  } = useTodoListEditor(todoList, saveTodoListTitle)
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    saveTodoList(todoList.id, { todos })
+    flushPendingSaves()
   }
 
   return (
@@ -19,55 +32,31 @@ export const TodoListForm = ({ todoList, saveTodoList }) => {
           onSubmit={handleSubmit}
           style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}
         >
-          {todos.map((name, index) => (
-            <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
-              <Typography sx={{ margin: '8px' }} variant='h6'>
-                {index + 1}
-              </Typography>
-              <TextField
-                sx={{ flexGrow: 1, marginTop: '1rem' }}
-                label='What to do?'
-                value={name}
-                onChange={(event) => {
-                  setTodos([
-                    // immutable update
-                    ...todos.slice(0, index),
-                    event.target.value,
-                    ...todos.slice(index + 1),
-                  ])
-                }}
-              />
-              <Button
-                sx={{ margin: '8px' }}
-                size='small'
-                color='secondary'
-                onClick={() => {
-                  setTodos([
-                    // immutable delete
-                    ...todos.slice(0, index),
-                    ...todos.slice(index + 1),
-                  ])
-                }}
-              >
-                <DeleteIcon />
-              </Button>
-            </div>
+          <TextField
+            sx={{ marginTop: '1rem' }}
+            label='List title'
+            value={title}
+            onChange={(event) => updateTitle(event.target.value)}
+            onBlur={commitTitle}
+          />
+          {todos.map((todo, index) => (
+            <TodoItemRow
+              key={todo.key}
+              todo={todo}
+              index={index}
+              isSaving={savingTodoKeys.has(todo.key)}
+              onChange={(text) => updateTodoText(todo, text)}
+              onBlur={() => commitTodoText(todo)}
+              onDelete={() => handleDeleteTodo(todo)}
+            />
           ))}
           <CardActions>
-            <Button
-              type='button'
-              color='primary'
-              onClick={() => {
-                setTodos([...todos, ''])
-              }}
-            >
+            <Button type='button' color='primary' onClick={addTodo}>
               Add Todo <AddIcon />
-            </Button>
-            <Button type='submit' variant='contained' color='primary'>
-              Save
             </Button>
           </CardActions>
         </form>
+        {error && <Alert severity='error'>{error}</Alert>}
       </CardContent>
     </Card>
   )
