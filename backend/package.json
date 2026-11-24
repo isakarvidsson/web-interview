@@ -2,6 +2,7 @@
   "type": "module",
   "scripts": {
     "lint": "eslint --ext .js src",
+    "test": "node --test",
     "start": "node --watch src/index.js"
   },
   "dependencies": {
